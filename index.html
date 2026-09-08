@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="robots" content="noindex">
+<title>音声の聞こえ方の評価</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">♪</span> 音声の聞こえ方の評価</div>
+  <div class="pill" id="pid"></div>
+</header>
+
+<main id="main">
+
+<!-- 0. no id -->
+<section id="s-noid" class="card center" hidden>
+  <h1>リンクが正しくありません</h1>
+  <p>お配りした個人用リンク（末尾に <code>?p=L..</code> が付いたもの）から開いてください。</p>
+</section>
+
+<!-- 1. intro -->
+<section id="s-intro" hidden>
+  <div class="card hero">
+    <div class="tag">LISTENING TEST</div>
+    <h1>基準の声と<br><span class="accent">同じ話し方か</span>を答える</h1>
+    <p class="lead">短い音声を 1 本ずつ聴き、上に置いてある基準の音声と「話し方を変えているように感じたか」を はい／いいえ で答えていただきます。</p>
+    <div class="pill big" id="est">所要時間: 約 26 分</div>
+    <div class="grid3">
+      <div class="box"><h3>流れ</h3><ol><li>説明と同意</li><li>音量合わせ</li><li>本試行（<span id="ntr">104</span> 問）</li><li>途中で 1 回休憩</li><li>終了番号の表示</li></ol></div>
+      <div class="box"><h3>お願い</h3><ul><li>静かな場所で、できればイヤホン・ヘッドホンをお使いください</li><li>基準の音声は何度でも聴き直せます</li><li>答えたら次に進みます（戻れません）</li></ul></div>
+      <div class="box"><h3>途中で閉じても大丈夫</h3><p>同じリンクを開くと続きから再開できます。回答は 1 問ごとに保存されます。</p><p class="muted">18 歳以上の方のみご参加ください。</p></div>
+    </div>
+    <div class="center"><button class="primary" id="b-start">はじめる</button></div>
+  </div>
+</section>
+
+<!-- 2. consent modal -->
+<div id="m-consent" class="modal" hidden>
+  <div class="dialog">
+    <div class="tag">CONSENT</div>
+    <h2>ご参加にあたって</h2>
+    <ul>
+      <li>この評価は、合成音声の聞こえ方を調べる研究のために行います。</li>
+      <li>記録するのは、回答（はい／いいえ）、回答までの時間、再生回数、端末の種類だけです。名前・メールアドレス・音声の録音は取得しません。</li>
+      <li>回答は個人用リンクの番号で保存され、研究発表では集計した形でのみ用います。</li>
+      <li>いつでも中断できます。中断・撤回したい場合は終了画面の番号を控えて研究者にご連絡ください。</li>
+    </ul>
+    <div class="row"><button class="ghost" id="b-decline">参加しない</button><button class="primary" id="b-consent">同意して開始</button></div>
+  </div>
+</div>
+
+<!-- 3. volume -->
+<section id="s-volume" class="card center" hidden>
+  <div class="tag">SOUND CHECK</div>
+  <h2>音量合わせ</h2>
+  <p>下の音声を再生し、聞き取りやすい音量に合わせてください。</p>
+  <button class="play big" id="b-volplay">▶ 再生</button>
+  <p class="muted" id="volmsg"></p>
+  <button class="primary" id="b-volok" disabled>この音量で進む</button>
+</section>
+
+<!-- 4. trial -->
+<section id="s-trial" hidden>
+  <div class="progress"><div id="bar"></div></div>
+  <div class="pcount" id="pcount"></div>
+  <div class="card sticky">
+    <div class="label">基準音声（何度でも再生できます）</div>
+    <button class="play" id="b-ref">▶ 基準を再生</button>
+  </div>
+  <div class="card">
+    <div class="label">テスト音声</div>
+    <button class="play" id="b-test">▶ テストを再生</button>
+    <div class="q">基準音声と話し方を変えているように感じましたか</div>
+    <div class="row answers">
+      <button class="ans" id="b-yes" disabled>はい</button>
+      <button class="ans" id="b-no" disabled>いいえ</button>
+    </div>
+    <p class="muted" id="hint">テスト音声を最後まで 1 回聴くと答えられます</p>
+  </div>
+</section>
+
+<!-- 5. break -->
+<section id="s-break" class="card center" hidden>
+  <div class="tag">BREAK</div>
+  <h2>半分終わりました</h2>
+  <p>少し休んでから続けてください。</p>
+  <button class="primary" id="b-resume">続ける</button>
+</section>
+
+<!-- 6. done -->
+<section id="s-done" class="card center" hidden>
+  <div class="tag">COMPLETE</div>
+  <h2>ご協力ありがとうございました</h2>
+  <p>確認番号を控えてください。</p>
+  <div class="code" id="code"></div>
+  <p class="muted">この画面は閉じて構いません。</p>
+</section>
+
+<!-- error -->
+<section id="s-error" class="card center" hidden>
+  <h2>通信に失敗しました</h2>
+  <p id="errmsg"></p>
+  <button class="primary" id="b-retry">もう一度送る</button>
+</section>
+
+</main>
+<footer class="foot"><span id="ver"></span></footer>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
