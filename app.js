@@ -1,5 +1,6 @@
 /* Experiment 1 page (計画書_聴取Web_20260908 §2.2).  Plain JS, no framework.
-   The trial list comes from trials/exp1/<P>.json (opaque stim_ids only); randomness was
+   2026-09-14: breaks are a list (trials.breaks) instead of one break_after.
+  The trial list comes from trials/exp1/<P>.json (opaque stim_ids only); randomness was
    drawn offline.  One row is inserted into Supabase per trial; on failure the row is kept in
    localStorage and re-sent before the next trial (nothing is skipped). */
 (function () {
@@ -122,7 +123,7 @@
     flushPending().then(function () {
       idx++;
       if (idx >= trials.n_trials) return finish();
-      if (idx === trials.break_after) { show("s-break"); logEvent("break", null, idx); return; }
+      if ((trials.breaks || [trials.break_after]).indexOf(idx) >= 0) { $("bktxt").textContent = idx + " 問まで終わりました（残り " + (trials.n_trials - idx) + " 問）"; show("s-break"); logEvent("break", null, idx); return; }
       showTrial();
     }).catch(function (e) {
       $("errmsg").textContent = "回答は端末に保存されています。通信が戻ったら「もう一度送る」を押してください。(" + e.message + ")";
