@@ -121,10 +121,11 @@
     tRef.pause(); tTest.pause();
     state.pending = (state.pending || []).concat([row]);
     state.rows = (state.rows || []).concat([row]); save();      // 2026-09-14: keep every answer locally for the end-of-session download
+    autoSaveWrite();                                            // 2026-09-14: rewrite the auto-save file if one was chosen
     flushPending().then(function () {
       idx++;
       if (idx >= trials.n_trials) return finish();
-      if ((trials.breaks || [trials.break_after]).indexOf(idx) >= 0) { $("bktxt").textContent = idx + " 問まで終わりました（残り " + (trials.n_trials - idx) + " 問）"; show("s-break"); logEvent("break", null, idx); return; }
+      if ((trials.breaks || [trials.break_after]).indexOf(idx) >= 0) { $("bktxt").textContent = idx + " 問まで終わりました（残り " + (trials.n_trials - idx) + " 問）"; $("bkinfo").textContent = fileHandle ? "自動保存は有効です。" : ""; show("s-break"); logEvent("break", null, idx); return; }
       showTrial();
     }).catch(function (e) {
       $("errmsg").textContent = "回答は端末に保存されています。通信が戻ったら「もう一度送る」を押してください。(" + e.message + ")";
@@ -134,6 +135,33 @@
   $("b-yes").onclick = function () { answer("yes"); };
   $("b-no").onclick = function () { answer("no"); };
   $("b-resume").onclick = function () { show("s-trial"); logEvent("resume", null, idx + 1); showTrial(); };
+  $("b-dl-break").onclick = downloadResults;
+  $("b-dl-err").onclick = downloadResults;
+  // ---------- auto-save (2026-09-14, 田代「途中自動保存もできるように」) ----------
+  // On browsers with the File System Access API (Chrome / Edge on PC) the listener picks a file once;
+  // after every answer the whole CSV is rewritten into it, so a file with all answers so far always exists
+  // on the PC even if the session is abandoned. Elsewhere (Safari, Firefox, phones) the break screens and
+  // the end screen offer a manual "save so far" download instead; nothing else changes.
+  var fileHandle = null;
+  function autoSaveSupported() { return typeof window.showSaveFilePicker === "function"; }
+  function autoSaveSetup() {
+    if (!autoSaveSupported()) { $("as-box").hidden = true; return; }
+    $("as-box").hidden = false;
+    $("b-autosave").onclick = function () {
+      var name = "listening_exp" + EXP + "_" + P + "_autosave.csv";
+      window.showSaveFilePicker({ suggestedName: name, types: [{ description: "CSV", accept: { "text/csv": [".csv"] } }] })
+        .then(function (h) { fileHandle = h; $("asinfo").textContent = "自動保存: " + h.name + "（回答のたびに上書き）"; logEvent("autosave_on"); return autoSaveWrite(); })
+        .catch(function (e) { $("asinfo").textContent = "自動保存は設定されませんでした（" + e.name + "）。休憩画面と終了画面から手動で保存できます。"; });
+    };
+  }
+  function autoSaveWrite() {
+    if (!fileHandle) return Promise.resolve();
+    var csv = resultsCsv();
+    return fileHandle.createWritable().then(function (w) { return w.write("\ufeff" + csv).then(function () { return w.close(); }); })
+      .then(function () { $("asinfo").textContent = "自動保存: " + fileHandle.name + "（" + (state.rows || []).length + " 件まで保存済み）"; })
+      .catch(function (e) { $("asinfo").textContent = "自動保存に失敗しました: " + e.name + "。休憩画面から手動で保存してください。"; logEvent("autosave_fail", { msg: String(e.name) }); });
+  }
+  autoSaveSetup();
   $("b-retry").onclick = function () {
     flushPending().then(function () { startTrials(); })   // startTrials recounts from the server
       .catch(function (e) { $("errmsg").textContent = "まだ送れません。少し待ってからもう一度押してください。(" + e.message + ")"; });
@@ -154,16 +182,17 @@
     return out.join("\r\n") + "\r\n";
   }
   function downloadResults() {
-    var name = "listening_exp" + EXP + "_" + P + "_" + (state.code || "nocode") + ".csv";
+    var name = "listening_exp" + EXP + "_" + P + "_" + (state.code || ("partial" + (state.rows || []).length)) + ".csv";
     var csv = resultsCsv();
-    $("dlinfo").textContent = (state.rows || []).length + " 件の回答 / ファイル名 " + name;
+    var setDl = function (m) { ["dlinfo", "dlinfo-break", "dlinfo-err"].forEach(function (id) { if ($(id)) $(id).textContent = m; }); };
+    setDl((state.rows || []).length + " 件の回答 / ファイル名 " + name);
     try {
       var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       logEvent("download", { n: (state.rows || []).length });
     } catch (e) {
-      $("dlinfo").textContent = "保存できませんでした: " + e + "。下の内容をコピーして送ってください。";
+      setDl("保存できませんでした: " + e + "。終了画面の下の内容をコピーして送ってください。");
     }
     $("dltext").value = csv; $("dltext").hidden = false;
   }
