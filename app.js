@@ -119,7 +119,8 @@
                 rt_ms: firstPlay ? Date.now() - firstPlay : null, n_play_ref: nRef, n_play_test: nTest,
                 client_ts: new Date().toISOString() };
     tRef.pause(); tTest.pause();
-    state.pending = (state.pending || []).concat([row]); save();
+    state.pending = (state.pending || []).concat([row]);
+    state.rows = (state.rows || []).concat([row]); save();      // 2026-09-14: keep every answer locally for the end-of-session download
     flushPending().then(function () {
       idx++;
       if (idx >= trials.n_trials) return finish();
@@ -141,6 +142,30 @@
     var code = P + "-" + Date.now().toString(36).toUpperCase().slice(-6);
     if (!state.code) { state.code = code; save(); logEvent("finish", { code: code }); }
     $("code").textContent = state.code; show("s-done");
+    $("b-dl").onclick = downloadResults;
+  }
+  // 2026-09-14 (田代): the listener saves their own answers to their PC/phone at the end and hands the file to 田代.
+  // The same rows are also in Supabase; this file is the copy that does not depend on the network.
+  function resultsCsv() {
+    var rows = state.rows || [];
+    var head = ["participant", "exp", "trial_no", "ref", "test", "answer", "rt_ms", "n_play_ref", "n_play_test", "client_ts"];
+    var out = [head.join(",")];
+    rows.forEach(function (r) { out.push(head.map(function (k) { return r[k] === null || r[k] === undefined ? "" : String(r[k]); }).join(",")); });
+    return out.join("\r\n") + "\r\n";
+  }
+  function downloadResults() {
+    var name = "listening_exp" + EXP + "_" + P + "_" + (state.code || "nocode") + ".csv";
+    var csv = resultsCsv();
+    $("dlinfo").textContent = (state.rows || []).length + " 件の回答 / ファイル名 " + name;
+    try {
+      var blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+      var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      logEvent("download", { n: (state.rows || []).length });
+    } catch (e) {
+      $("dlinfo").textContent = "保存できませんでした: " + e + "。下の内容をコピーして送ってください。";
+    }
+    $("dltext").value = csv; $("dltext").hidden = false;
   }
 
   // ---------- boot ----------

@@ -34,3 +34,4 @@ button:disabled{opacity:.35;cursor:default}
 .code{font-family:ui-monospace,monospace;font-size:26px;letter-spacing:.08em;background:#0a1220;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px auto;display:inline-block}
 .foot{text-align:center;color:#3c4a66;font-size:11px;padding:20px}
 [hidden]{display:none!important}
+.dltext { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; margin-top: 8px; }
